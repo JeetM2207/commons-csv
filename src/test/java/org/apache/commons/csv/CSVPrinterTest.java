@@ -79,6 +79,33 @@ import org.junit.jupiter.params.provider.ValueSource;
  */
 class CSVPrinterTest {
 
+
+
+    // https://github.com/apache/commons-csv/issues/1:
+    // Quote values starting with comment marker in minimal quote mode so parser does not drop them
+    @Test
+    void testQuoteCommentMarkerFirstChar() throws IOException {
+        final CSVFormat format = CSVFormat.DEFAULT.builder().setCommentMarker(';').get();
+        final StringWriter sw = new StringWriter();
+        final String col1 = ";comment-like";
+        try (CSVPrinter printer = new CSVPrinter(sw, format)) {
+            printer.printComment("a real comment");
+            printer.printRecord(col1, "b");
+            printer.printRecord("a;b", ";c");
+        }
+        final String string = sw.toString();
+        assertEquals("; a real comment" + RECORD_SEPARATOR +
+                "\";comment-like\",b" + RECORD_SEPARATOR +
+                "a;b,\";c\"" + RECORD_SEPARATOR, string);
+        try (CSVParser parser = CSVParser.parse(string, format)) {
+            final java.util.List<CSVRecord> records = parser.getRecords();
+            assertEquals(2, records.size());
+            assertArrayEquals(new String[] {col1, "b"}, records.get(0).values());
+            assertArrayEquals(new String[] {"a;b", ";c"}, records.get(1).values());
+        }
+    }
+
+
     private static final int TABLE_RECORD_COUNT = 2;
     private static final int TABLE_AND_HEADER_RECORD_COUNT = TABLE_RECORD_COUNT + 1;
     private static final char DQUOTE_CHAR = '"';
