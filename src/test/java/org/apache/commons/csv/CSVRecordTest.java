@@ -48,6 +48,21 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 class CSVRecordTest {
 
+
+
+    // https://github.com/apache/commons-csv/issues/2:
+    // isMapped(null) and isSet(null) should return false instead of NPE with ignoreHeaderCase
+    @Test
+    void testIsMappedNullWithIgnoreHeaderCase() throws java.io.IOException {
+        final CSVFormat format = CSVFormat.DEFAULT.builder().setHeader("A", "B").setIgnoreHeaderCase(true).get();
+        try (CSVParser parser = CSVParser.parse("1,2", format)) {
+            final CSVRecord record = parser.iterator().next();
+            org.junit.jupiter.api.Assertions.assertFalse(record.isMapped(null));
+            org.junit.jupiter.api.Assertions.assertFalse(record.isSet(null));
+        }
+    }
+
+
     private enum EnumFixture {
         UNKNOWN_COLUMN
     }
